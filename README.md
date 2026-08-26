@@ -51,37 +51,6 @@ Answer options can also be chosen with the number keys **1-4**.
 
 ---
 
-## Adding or editing content
-
-All training content is in **`static/js/data.js`**. Nothing in `game.js` needs to change
-when you add material.
-
-- **`CONTENT.scenarios`** — the Round 4 deck. Add an entry:
-
-  ```js
-  { id:"wr11", pos:"61", zone:"Weight Room", tag:"Policy",
-    text:"The situation the player sees.",
-    options:[
-      { t:"The right call.", correct:true },
-      { t:"A wrong call.",   correct:false }
-    ],
-    teach:"The rule, shown after they answer." }
-  ```
-
-  `pos` is `"61"`, `"62"`, `"60"`, or `"any"` for facility-wide policies. Each shift draws
-  5 position scenarios and 3 facility-wide ones, shuffled, so the deck stays fresh across
-  replays — the more you add, the less repetition.
-
-- **`CONTENT.radioDrills`** — Round 3 drills (`to`, `phrase`, `pause`, `body`).
-- **`CONTENT.uniform`** — Round 1 items. `ok:true` passes normally, `friday:true` passes only on Blue & Gold Fridays.
-- **`CONTENT.closing`** — Round 5 checklists per position. `ok:false` items need a `why`.
-- **`CONTENT.radio`**, **`CONTENT.urgency`**, **`CONTENT.arrivals`** — feed both the drills and the Playbook.
-
-When you add material from a new document, add it to these arrays and it shows up in the
-game and the Playbook automatically.
-
----
-
 ## Files
 
 ```
