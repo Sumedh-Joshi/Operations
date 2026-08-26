@@ -1,0 +1,16 @@
+# Virtual environment - never commit this (rebuild with: py -m venv OPS_2)
+OPS_2/
+
+# Local training log
+data/scores.json
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Editor/tool config
+.claude/

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SRWC Ops: Shadow Shift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ HUD ============ -->
+  <header id="hud" class="hidden">
+    <div class="hud-left">
+      <span id="hud-badge" class="pos-badge">61</span>
+      <div>
+        <div id="hud-name" class="hud-name">Trainee</div>
+        <div id="hud-role" class="hud-role">Weight Room Assistant</div>
+      </div>
+    </div>
+
+    <div class="hud-center">
+      <div class="meter-label">
+        <span>Supervisor Confidence</span>
+        <span id="conf-val">100%</span>
+      </div>
+      <div class="meter"><div id="conf-bar" class="meter-fill"></div></div>
+    </div>
+
+    <div class="hud-right">
+      <div class="stat"><span class="stat-num" id="hud-score">0</span><span class="stat-lbl">pts</span></div>
+      <div class="stat"><span class="stat-num" id="hud-streak">0</span><span class="stat-lbl">streak</span></div>
+      <button id="btn-playbook" class="ghost-btn" title="Open the Playbook">Playbook</button>
+    </div>
+  </header>
+
+  <!-- ============ SHIFT PROGRESS ============ -->
+  <nav id="progress" class="hidden">
+    <div class="step" data-step="locker"><span>1</span>Locker Room</div>
+    <div class="step" data-step="clock"><span>2</span>Clock In</div>
+    <div class="step" data-step="radio"><span>3</span>Radio Check</div>
+    <div class="step" data-step="floor"><span>4</span>On the Floor</div>
+    <div class="step" data-step="closing"><span>5</span>Closing</div>
+  </nav>
+
+  <!-- ============ SCREEN MOUNT ============ -->
+  <main id="screen"></main>
+
+  <footer id="foot">
+    <span>SRWC Ops: Shadow Shift &mdash; a training game built from the Ops Assistant Shadow Shift Plan.</span>
+  </footer>
+</div>
+
+<!-- ============ PLAYBOOK DRAWER ============ -->
+<div id="drawer-scrim" class="hidden"></div>
+<aside id="drawer" class="hidden">
+  <div class="drawer-head">
+    <h2>The Playbook</h2>
+    <button id="btn-close-drawer" class="ghost-btn">Close</button>
+  </div>
+  <div id="drawer-body"></div>
+</aside>
+
+<script src="static/js/data.js"></script>
+<script src="static/js/game.js"></script>
+</body>
+</html>
