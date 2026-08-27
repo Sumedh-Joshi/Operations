@@ -1,0 +1,15 @@
+# The game is pure static HTML/CSS/JS. The Flask server is only for running a
+# shared training log locally, so none of it needs to ship to Vercel. Excluding
+# it also stops Vercel from detecting this as a Python project.
+
+OPS_2/
+app.py
+requirements.txt
+play.bat
+data/
+__pycache__/
+*.pyc
+
+# Local scratch
+oh.txt
+.claude/
