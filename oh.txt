@@ -1,0 +1,50 @@
+
+## Adding or editing content
+
+All training content is in **`static/js/data.js`**. Nothing in `game.js` needs to change
+when you add material.
+
+- **`CONTENT.scenarios`** — the Round 4 deck. Add an entry:
+
+  ```js
+  { id:"wr11", pos:"61", zone:"Weight Room", tag:"Policy",
+    text:"The situation the player sees.",
+    options:[
+      { t:"The right call.", correct:true },
+      { t:"A wrong call.",   correct:false }
+    ],
+    teach:"The rule, shown after they answer." }
+  ```
+
+  `pos` is `"61"`, `"62"`, `"60"`, or `"any"` for facility-wide policies. Each shift draws
+  5 position scenarios and 3 facility-wide ones, shuffled, so the deck stays fresh across
+  replays — the more you add, the less repetition.
+
+- **`CONTENT.radioDrills`** — Round 3 drills (`to`, `phrase`, `pause`, `body`).
+- **`CONTENT.uniform`** — Round 1 items. `ok:true` passes normally, `friday:true` passes only on Blue & Gold Fridays.
+- **`CONTENT.closing`** — Round 5 checklists per position. `ok:false` items need a `why`.
+- **`CONTENT.radio`**, **`CONTENT.urgency`**, **`CONTENT.arrivals`** — feed both the drills and the Playbook.
+
+When you add material from a new document, add it to these arrays and it shows up in the
+game and the Playbook automatically.
+
+
+
+Round 3 — Radio Check
+Make the Call
+Drill 3 of 3. You are 62.
+
+You found an unused SRWC basketball on the court floor and need it back in circulation.
+"62 to
+55
+, could you come to the railing
+when you get the chance
+?"
+After you say your call sign, do you pause?
+
+1
+Pause and wait for "66 go ahead" before continuing.
+
+2
+No pause — keep talking straight through.
+SRWC Ops: Shadow Shift — a training game built from the Ops Assistant Shadow Shift Plan.

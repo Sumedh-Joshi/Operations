@@ -405,7 +405,8 @@ function screenRadio() {
           else x.classList.add('dim');
         });
 
-        const u = CONTENT.urgency.find(z => z.phrase === d.phrase);
+        const u = CONTENT.urgency.find(z => z.phrase === d.phrase)
+                  || { phrase: d.phrase, means: '', examples: '', pauseNote: '' };
         const why = stage === 0
           ? `This one goes to <b>${esc(d.to)}</b>${whoIs(d.to) ? ` &mdash; ${esc(whoIs(d.to))}` : ''}. On the air you say <b>"${esc(spoken(d.to))}"</b>.`
           : stage === 1
@@ -455,10 +456,12 @@ const SEC = 30;
 function screenFloor() {
   setStep('floor');
   S.round = 'floor';
-  const pool = CONTENT.scenarios.filter(s => s.pos === S.pos || s.pos === 'any');
-  const own = shuffle(pool.filter(s => s.pos === S.pos));
-  const any = shuffle(pool.filter(s => s.pos === 'any'));
-  const deck = shuffle([...own.slice(0, 5), ...any.slice(0, FLOOR_ROUNDS - 5)]).slice(0, FLOOR_ROUNDS);
+  // Each position owns its scenarios; CONTENT.shared holds facility-wide ones.
+  // Take up to 5 from the position and top the deck up from shared, so a new
+  // position with only a couple of scenarios still plays a full round.
+  const own = shuffle(CONTENT.positions[S.pos].scenarios || []).slice(0, 5);
+  const shared = shuffle(CONTENT.shared.scenarios || []);
+  const deck = shuffle([...own, ...shared.slice(0, FLOOR_ROUNDS - own.length)]).slice(0, FLOOR_ROUNDS);
   let i = 0;
 
   const step = () => {
@@ -540,7 +543,7 @@ function screenFloor() {
 function screenClosing() {
   setStep('closing');
   S.round = 'closing';
-  const set = CONTENT.closing[S.pos];
+  const set = CONTENT.positions[S.pos].closing;
   const items = shuffle(set.items);
   const picked = new Set();
 
@@ -709,13 +712,13 @@ function screenReport() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(row)
   })
-    .then(r => r.json())
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('no shared log')))
     .then(d => {
       const n = $('#saveNote');
-      if (n) n.innerHTML =
+      if (n && typeof d.rank === 'number') n.innerHTML =
         `Saved to the shared training log &mdash; you are <b>#${d.rank}</b> of ${d.total} shifts recorded.`;
     })
-    .catch(() => { /* no server: the local save above already stands */ });
+    .catch(() => { /* no shared log yet: the local save above already stands */ });
 }
 
 /* ============================================================
@@ -757,9 +760,11 @@ function screenLeaderboard() {
 
   // Prefer the shared server log; fall back to this browser's log.
   fetch('api/leaderboard')
-    .then(r => r.json())
-    .then(rows => render(rows.length ? rows : local(), rows.length > 0))
-    .catch(() => render(local(), false));
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('no shared log')))
+    .then(rows => Array.isArray(rows)
+      ? render(rows, true)                       // shared log, even if empty
+      : Promise.reject(new Error('bad payload')))
+    .catch(() => render(local(), false));        // no shared log: this browser only
 }
 
 /* ============================================================
@@ -866,10 +871,56 @@ function bindKeys() {
   };
 }
 
+
+/* ============================================================
+   CONTENT CHECK
+   ------------------------------------------------------------
+   Warns in the browser console about common data.js mistakes so
+   a typo shows up as a message instead of a broken shift.
+   Open DevTools (F12) after editing data.js to see the results.
+   ============================================================ */
+function checkContent() {
+  const problems = [];
+
+  CONTENT.radioDrills.forEach((d, i) => {
+    if (!CONTENT.urgency.some(u => u.phrase === d.phrase))
+      problems.push(`radioDrills[${i}]: phrase "${d.phrase}" is not one of the urgency phrases, so it can never be answered correctly.`);
+  });
+
+  Object.entries(CONTENT.positions).forEach(([k, p]) => {
+    if (!p.scenarios || !p.scenarios.length) problems.push(`position ${k}: has no scenarios.`);
+    if (!p.closing || !p.closing.items || !p.closing.items.length) problems.push(`position ${k}: has no closing items.`);
+    if (p.closing) p.closing.items.forEach((it, i) => {
+      if (it.ok === false && !it.why) problems.push(`position ${k} closing[${i}]: a trap item should have a "why".`);
+    });
+  });
+
+  const allScenarios = [
+    ...Object.entries(CONTENT.positions).flatMap(([k, p]) => (p.scenarios || []).map(s => [k, s])),
+    ...(CONTENT.shared.scenarios || []).map(s => ['shared', s])
+  ];
+  const seen = {};
+  allScenarios.forEach(([where, sc]) => {
+    if (seen[sc.id]) problems.push(`scenario id "${sc.id}" is used more than once (${seen[sc.id]} and ${where}).`);
+    seen[sc.id] = where;
+    const right = (sc.options || []).filter(o => o.correct === true).length;
+    if (right !== 1) problems.push(`scenario "${sc.id}" (${where}) has ${right} correct options; it needs exactly 1.`);
+  });
+
+  if (problems.length) {
+    console.warn('%cSRWC content check found ' + problems.length + ' problem(s):', 'font-weight:bold');
+    problems.forEach(p => console.warn('  - ' + p));
+  } else {
+    console.log('%cSRWC content check: all good.', 'color:#2fbf71');
+  }
+  return problems;
+}
+
 /* ---------- boot ---------- */
 $('#btn-playbook').onclick = openDrawer;
 $('#btn-close-drawer').onclick = closeDrawer;
 $('#drawer-scrim').onclick = closeDrawer;
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
+checkContent();
 screenTitle();
