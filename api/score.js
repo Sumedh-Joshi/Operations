@@ -20,10 +20,44 @@
 const KEY = 'srwc:shifts';
 const MAX_ROWS = 5000;   // keep the list from growing without bound
 
+/* Vercel's storage integrations use several different env var names
+   depending on which one you connect, so accept all of them. */
+const STORAGE_VARS = [
+  'KV_REST_API_URL', 'KV_REST_API_TOKEN',
+  'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN',
+  'REDIS_URL', 'KV_URL'
+];
+
 function creds() {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? { url: url.replace(/\/+$/, ''), token } : null;
+  const e = process.env;
+
+  // 1. REST url + token pairs
+  const pairs = [
+    [e.KV_REST_API_URL, e.KV_REST_API_TOKEN],
+    [e.UPSTASH_REDIS_REST_URL, e.UPSTASH_REDIS_REST_TOKEN]
+  ];
+  for (const [url, token] of pairs) {
+    if (url && token) return { url: String(url).replace(/\/+$/, ''), token };
+  }
+
+  // 2. A rediss:// connection string. Upstash serves its REST API on the
+  //    same host over https, using the connection password as the token.
+  const conn = e.REDIS_URL || e.KV_URL;
+  if (conn) {
+    try {
+      const u = new URL(conn);
+      if (u.hostname && u.password) {
+        return { url: `https://${u.hostname}`, token: decodeURIComponent(u.password) };
+      }
+    } catch (err) { /* not a URL we understand */ }
+  }
+
+  return null;
+}
+
+/* Names only, never values - so a 503 says what is actually wired up. */
+function seenVars() {
+  return STORAGE_VARS.filter(k => process.env[k]);
 }
 
 async function redis(cmd) {
@@ -101,7 +135,11 @@ module.exports = async (req, res) => {
     // already saved to the player's browser, so this is not fatal.
     const missing = e.message === 'no-store';
     return res.status(503).json({
-      error: missing ? 'Shared training log is not connected yet.' : 'Storage unavailable.'
+      error: missing ? 'Shared training log is not connected yet.' : 'Storage unavailable.',
+      storage_env_vars_found: seenVars(),
+      hint: missing
+        ? 'Connect a Redis database in the Vercel Storage tab, then redeploy.'
+        : String(e.message).slice(0, 200)
     });
   }
 };
