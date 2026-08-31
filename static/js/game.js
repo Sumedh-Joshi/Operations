@@ -3,10 +3,10 @@
    ============================================================ */
 
 /* ---------- tiny helpers ---------- */
-const $  = (s, r = document) => r.querySelector(s);
+const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
-const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[b[i], b[j]] = [b[j], b[i]]; } return b; };
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 const SCREEN = $('#screen');
@@ -162,10 +162,10 @@ function screenTitle() {
    ============================================================ */
 const SLOTS = [
   { key: 'bottoms', label: 'Bottoms' },
-  { key: 'top',     label: 'Shirt' },
-  { key: 'badge',   label: 'Nametag' },
-  { key: 'shoes',   label: 'Shoes' },
-  { key: 'layer',   label: 'Layer (optional)' }
+  { key: 'top', label: 'Shirt' },
+  { key: 'badge', label: 'Nametag' },
+  { key: 'shoes', label: 'Shoes' },
+  { key: 'layer', label: 'Layer (optional)' }
 ];
 
 function itemOK(item) {
@@ -183,8 +183,8 @@ function screenLocker() {
         <div class="eyebrow">Round 1 &mdash; Locker Room</div>
         <h2>Suit Up</h2>
         <p class="sub">${S.friday
-          ? '<b class="gold">It is a Blue &amp; Gold Friday.</b> Kent State apparel is on the table today.'
-          : 'Regular weekday. Build a uniform that passes a supervisor walk-by.'}</p>
+        ? '<b class="gold">It is a Blue &amp; Gold Friday.</b> Kent State apparel is on the table today.'
+        : 'Regular weekday. Build a uniform that passes a supervisor walk-by.'}</p>
 
         <div class="mirror" id="mirror"></div>
 
@@ -272,14 +272,22 @@ function screenClock() {
   const others = CONTENT.arrivals.filter(r => r !== row);
 
   const qs = [
-    { q: `Your DSE posted shift is <b>${row.dse}</b>. What time should you <b>arrive</b> at the building?`,
-      a: row.arrive, d: others.map(r => r.arrive) },
-    { q: `Same shift. What is the latest you should <b>clock in</b>?`,
-      a: row.clockIn, d: others.map(r => r.clockIn) },
-    { q: `Same shift. What time do you need to be <b>at your station</b>?`,
-      a: row.station, d: others.map(r => r.station) },
-    { q: `You get a negative write-up if you are not in position by which minute mark?`,
-      a: 'The "55" minute mark', d: ['The "42" minute mark', 'The "30" minute mark', 'The top of the hour'] }
+    {
+      q: `Your DSE posted shift is <b>${row.dse}</b>. What time should you <b>arrive</b> at the building?`,
+      a: row.arrive, d: others.map(r => r.arrive)
+    },
+    {
+      q: `Same shift. What is the latest you should <b>clock in</b>?`,
+      a: row.clockIn, d: others.map(r => r.clockIn)
+    },
+    {
+      q: `Same shift. What time do you need to be <b>at your station</b>?`,
+      a: row.station, d: others.map(r => r.station)
+    },
+    {
+      q: `You get a negative write-up if you are not in position by which minute mark?`,
+      a: 'The "55" minute mark', d: ['The "42" minute mark', 'The "30" minute mark', 'The top of the hour']
+    }
   ];
 
   let i = 0;
@@ -337,13 +345,16 @@ function screenClock() {
 
 /* On the air you say the last two digits: directory 866 is spoken as "66". */
 const spoken = n => /^\d+$/.test(n) ? n.slice(-2) : n;
-const whoIs  = n => (CONTENT.radio.find(r => r.num === n) || {}).who || '';
-const cap    = t => t.charAt(0).toUpperCase() + t.slice(1);
+const whoIs = n => (CONTENT.radio.find(r => r.num === n) || {}).who || '';
+const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
 
 function screenRadio() {
   setStep('radio');
   S.round = 'radio';
-  const drills = shuffle(CONTENT.radioDrills).slice(0, 3);
+  // Skip any drill addressed to your own call sign - "55 to 55" is nonsense
+  // for a Guest Services Assistant, whose 855 is spoken as "55".
+  const me = CONTENT.positions[S.pos].num;
+  const drills = shuffle(CONTENT.radioDrills.filter(d => spoken(d.to) !== me)).slice(0, 3);
   let i = 0;
 
   const step = () => {
@@ -406,7 +417,7 @@ function screenRadio() {
         });
 
         const u = CONTENT.urgency.find(z => z.phrase === d.phrase)
-                  || { phrase: d.phrase, means: '', examples: '', pauseNote: '' };
+          || { phrase: d.phrase, means: '', examples: '', pauseNote: '' };
         const why = stage === 0
           ? `This one goes to <b>${esc(d.to)}</b>${whoIs(d.to) ? ` &mdash; ${esc(whoIs(d.to))}` : ''}. On the air you say <b>"${esc(spoken(d.to))}"</b>.`
           : stage === 1
@@ -516,8 +527,8 @@ function screenFloor() {
       if (!ok) miss(esc(sc.text), sc.teach);
 
       const title = !chosen ? 'Time ran out. On a real floor, hesitation is a decision.'
-                            : ok ? (bonus > 30 ? 'Sharp. Fast and correct.' : 'Correct call.')
-                                 : 'That is not the call.';
+        : ok ? (bonus > 30 ? 'Sharp. Fast and correct.' : 'Correct call.')
+          : 'That is not the call.';
       $('.card').insertAdjacentHTML('beforeend', feedback(ok, title,
         `<b>Why:</b> ${esc(sc.teach)}` + (ok && bonus ? `<br><span class="tiny">+${bonus} speed bonus</span>` : '')));
 
@@ -582,7 +593,7 @@ function screenClosing() {
 
     $('.card').insertAdjacentHTML('beforeend', feedback(right === items.length,
       right === items.length ? 'Clean close. The sup has nothing to send you back for.'
-                             : `${right} of ${items.length} correct.`,
+        : `${right} of ${items.length} correct.`,
       'Always notify your supervisor when closing tasks are complete &mdash; they may direct you to locker room checks or other closing responsibilities.'));
     $('#done').outerHTML = `<button class="btn" id="nx">End of shift report</button>`;
     $('#nx').onclick = screenReport;
@@ -636,12 +647,12 @@ function screenReport() {
   const clean = r => !S.roundMiss[r];
   const earned = {
     dressed: clean('locker'),
-    ontime:  clean('clock'),
-    radio:   clean('radio'),
+    ontime: clean('clock'),
+    radio: clean('radio'),
     streak5: S.bestStreak >= 5,
-    noflag:  S.minConf >= 70,
-    closer:  clean('closing'),
-    solo:    pct >= 85
+    noflag: S.minConf >= 70,
+    closer: clean('closing'),
+    solo: pct >= 85
   };
 
   SCREEN.innerHTML = `
@@ -676,8 +687,8 @@ function screenReport() {
       <h3 style="margin-top:24px">${S.misses.length ? 'Go over these with your trainer' : 'Nothing flagged'}</h3>
       <div class="review">
         ${S.misses.length
-          ? S.misses.map(m => `<div class="review-item"><div class="q">${m.q}</div><div class="a">${m.a}</div></div>`).join('')
-          : `<div class="review-item ok"><div class="q">Perfect shift.</div>
+      ? S.misses.map(m => `<div class="review-item"><div class="q">${m.q}</div><div class="a">${m.a}</div></div>`).join('')
+      : `<div class="review-item ok"><div class="q">Perfect shift.</div>
              <div class="a">Every call, every policy, every closing task. Go run it solo.</div></div>`}
       </div>
 
@@ -736,8 +747,8 @@ function screenLeaderboard() {
         <div class="eyebrow">Training Log</div>
         <h2>Top Shifts</h2>
         <p class="sub">${shared
-          ? 'Best shadow shifts recorded on the shared training log.'
-          : 'Best shadow shifts recorded in this browser.'}</p>
+        ? 'Best shadow shifts recorded on the shared training log.'
+        : 'Best shadow shifts recorded in this browser.'}</p>
         ${rows.length ? `
         <table class="lb">
           <tr><th>#</th><th>Name</th><th>Position</th><th>Grade</th><th>Score</th><th>Points</th></tr>
@@ -875,9 +886,9 @@ function bindKeys() {
 /* ============================================================
    CONTENT CHECK
    ------------------------------------------------------------
-   Warns in the browser console about common data.js mistakes so
+   Warns in the browser console about common content mistakes so
    a typo shows up as a message instead of a broken shift.
-   Open DevTools (F12) after editing data.js to see the results.
+   Open DevTools (F12) after editing static/js/content/ to see them.
    ============================================================ */
 function checkContent() {
   const problems = [];

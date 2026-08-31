@@ -65,7 +65,16 @@
   <div id="drawer-body"></div>
 </aside>
 
-<script src="static/js/data.js"></script>
+<!-- Content. shared.js must load first: it creates CONTENT and an empty
+     positions object that each position file then adds itself to.
+     To add a position, drop a file in static/js/content/ and list it here. -->
+<script src="static/js/content/shared.js"></script>
+<script src="static/js/content/55-guest-services.js"></script>
+<script src="static/js/content/60-cleaner.js"></script>
+<script src="static/js/content/61-weight-room.js"></script>
+<script src="static/js/content/62-courts.js"></script>
+
+<!-- Engine. Must load last - it reads CONTENT at startup. -->
 <script src="static/js/game.js"></script>
 </body>
 </html>

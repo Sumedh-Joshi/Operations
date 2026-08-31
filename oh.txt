@@ -1,50 +1,166 @@
 
 ## Adding or editing content
 
-All training content is in **`static/js/data.js`**. Nothing in `game.js` needs to change
-when you add material.
+Training content lives in **`static/js/content/`**, one file per position plus a
+shared file. Nothing in `game.js` changes when you add material.
 
-- **`CONTENT.scenarios`** — the Round 4 deck. Add an entry:
+| File | What is in it |
+|------|---------------|
+| `shared.js` | Facility-wide: radio numbers, urgency phrases, arrival times, uniform items, radio drills, badges, and the scenarios ANY position can be asked. **Loads first** - it creates `CONTENT`. |
+| `55-guest-services.js` | Position 55 only |
+| `60-cleaner.js` | Position 60 only |
+| `61-weight-room.js` | Position 61 only |
+| `62-courts.js` | Position 62 only |
 
-  ```js
-  { id:"wr11", pos:"61", zone:"Weight Room", tag:"Policy",
-    text:"The situation the player sees.",
-    options:[
-      { t:"The right call.", correct:true },
-      { t:"A wrong call.",   correct:false }
-    ],
-    teach:"The rule, shown after they answer." }
-  ```
+Each position file is self-contained: title-card details, its own Round 4
+scenarios, and its Round 5 closing checklist.
 
-  `pos` is `"61"`, `"62"`, `"60"`, or `"any"` for facility-wide policies. Each shift draws
-  5 position scenarios and 3 facility-wide ones, shuffled, so the deck stays fresh across
-  replays — the more you add, the less repetition.
+```js
+CONTENT.positions["61"] = {
+  num: "61",
+  name: "Weight Room Assistant",
+  icon: "\U0001F3CB\uFE0F",
+  blurb: "Shown on the title card.",
 
-- **`CONTENT.radioDrills`** — Round 3 drills (`to`, `phrase`, `pause`, `body`).
-- **`CONTENT.uniform`** — Round 1 items. `ok:true` passes normally, `friday:true` passes only on Blue & Gold Fridays.
-- **`CONTENT.closing`** — Round 5 checklists per position. `ok:false` items need a `why`.
-- **`CONTENT.radio`**, **`CONTENT.urgency`**, **`CONTENT.arrivals`** — feed both the drills and the Playbook.
+  scenarios: [
+    {
+      id: "wr1", zone: "Weight Room", tag: "Policy",
+      text: "The situation the player sees.",
+      options: [
+        { t: "The right call.", correct: true },
+        { t: "A wrong call.",   correct: false }
+      ],
+      teach: "The rule, shown after they answer."
+    }
+  ],
 
-When you add material from a new document, add it to these arrays and it shows up in the
-game and the Playbook automatically.
+  closing: {
+    title: "Weight Room Closing",
+    items: [
+      { t: "A real closing task", ok: true },
+      { t: "A trap that does not belong", ok: false,
+        why: "Explain why it is wrong." }
+    ]
+  }
+};
+```
 
+### Adding a new position
 
+1. Copy any position file in `static/js/content/`, rename it (e.g. `59-aquatics.js`).
+2. Change the number, name, icon, blurb, scenarios and closing items.
+3. Add a `<script>` tag for it in `index.html`, **after `shared.js`**.
 
-Round 3 — Radio Check
-Make the Call
-Drill 3 of 3. You are 62.
+That is the whole job - it appears on the title screen and is fully playable.
+If you forget step 3 the position simply will not show up; if you put the tag
+*before* `shared.js`, the file throws a clear error telling you to fix the order.
 
-You found an unused SRWC basketball on the court floor and need it back in circulation.
-"62 to
-55
-, could you come to the railing
-when you get the chance
-?"
-After you say your call sign, do you pause?
+Rules that matter:
 
-1
-Pause and wait for "66 go ahead" before continuing.
+- Every scenario needs **exactly one** option with `correct: true`.
+- Scenario `id` values must be unique across **all** files.
+- A closing item with `ok: false` should carry a `why`.
+- A `radioDrills` entry's `phrase` must exactly match one of the `urgency` phrases in `shared.js`.
+- A position's `num` is also its radio call sign, so `"62 to 66, ..."` comes from there.
 
-2
-No pause — keep talking straight through.
-SRWC Ops: Shadow Shift — a training game built from the Ops Assistant Shadow Shift Plan.
+A position does not need many scenarios to be playable. Each shift draws up to 5
+from the position and tops the deck up from the shared pool, so a new position
+with only two of its own scenarios still plays a full round.
+
+### Checking your work
+
+The game validates content every time it loads. Open the page, press **F12** for the
+browser console, and you will see either `SRWC content check: all good.` or a list of
+exactly what is wrong and where. This catches duplicate ids, missing or multiple
+correct answers, empty positions, traps with no explanation, and radio drills whose
+phrase is not a real urgency phrase.
+
+---
+
+## Files
+
+```
+OPS_game/
+├─ index.html              the game page (at root, so static hosting works)
+├─ static/
+│  ├─ css/style.css
+│  └─ js/
+│     ├─ content/          ← all training content lives here
+│     │  ├─ shared.js              facility-wide, loads first
+│     │  ├─ 55-guest-services.js
+│     │  ├─ 60-cleaner.js
+│     │  ├─ 61-weight-room.js
+│     │  └─ 62-courts.js
+│     └─ game.js           game engine
+│
+├─ api/                    Vercel serverless functions (shared training log)
+│  ├─ score.js             POST a finished shift
+│  └─ leaderboard.js       GET the shared rankings
+├─ vercel.json              Vercel config (no build, static + functions)
+│
+├─ app.py                  OPTIONAL Flask server, local use only
+├─ play.bat                one-click local launcher
+├─ requirements.txt
+├─ OPS_2/                  virtual environment (not committed)
+└─ data/
+   └─ scores.json          shared log, only used when Flask is running
+```
+
+The first block is the deployable game. Everything after the gap is optional.
+
+## The shared training log
+
+The game posts every finished shift to `/api/score` and reads `/api/leaderboard`.
+On Vercel those are real serverless functions (`api/score.js`, `api/leaderboard.js`)
+backed by Upstash Redis. They have **no npm dependencies** - they call Upstash over
+its REST API with plain `fetch`.
+
+### One-time setup on Vercel
+
+1. Push, then open your project on <https://vercel.com>.
+2. **Storage** tab -> **Create Database** -> **Upstash Redis** (free tier) -> connect
+   it to this project.
+3. **Redeploy** so the new environment variables reach the functions.
+
+That is it. The integration injects `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+automatically; the code also accepts `UPSTASH_REDIS_REST_URL` /
+`UPSTASH_REDIS_REST_TOKEN` if your integration uses those names instead.
+
+### Verifying it worked
+
+```bash
+curl https://YOUR-PROJECT.vercel.app/api/leaderboard
+```
+
+- `[]` or a JSON array -> **working**. The Leaderboard will say "recorded on the
+  shared training log".
+- `503` -> functions deployed but storage is not connected yet. The game still works;
+  each player just keeps their own log until you finish step 2.
+- `404` or JavaScript source text -> Vercel is serving `api/` as static files rather
+  than functions. Check that `vercel.json` does not set `outputDirectory`.
+
+### Before storage is connected
+
+Nothing breaks. Every shift is always written to the player's own browser first, and
+the shared POST is best-effort on top of that. If the shared log is unreachable the
+Leaderboard quietly falls back to "recorded in this browser".
+
+### Trainer view
+
+- `/api/leaderboard` - top 15 by score (what players see)
+- `/api/leaderboard?limit=100` - a longer ranking
+- `/api/leaderboard?all=1` - **every** recorded shift, newest first, for checking who
+  completed their training
+
+### Note on the two URLs
+
+The shared log only exists on the **Vercel** deployment. The GitHub Pages copy has no
+backend, so it silently stays per-device. Share the Vercel link with hires, and retire
+the Pages one so you are not maintaining two different behaviours.
+
+### Privacy
+
+Names and scores are stored in your Upstash database and the top 15 are visible to
+anyone who opens the Leaderboard. Ask hires for a first name and last initial if you
+would rather not put full student names on a page other hires can see.
+
